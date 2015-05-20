@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Demo App</title>
+    <script src="http://localhost:8180/auth/js/keycloak.js"></script>
+    <style>
+        pre {
+            padding: 1em;
+            background-color: #eee;
+            border: 1px solid #aaa;
+        }
+    </style>
+
+    <script>
+        var keycloak = new Keycloak();
+
+        function request(endpoint) {
+            var req = new XMLHttpRequest();
+            var output = document.getElementById(endpoint);
+            req.open("GET", "/services/" + endpoint, true);
+
+            if (keycloak.authenticated) {
+                req.setRequestHeader("Authorization", "Bearer " + keycloak.token);
+            }
+
+            req.onreadystatechange = function () {
+                if (req.readyState == 4) {
+                    if (req.status == 200) {
+                        output.innerHTML = req.responseText;
+                    } else {
+                        output.innerHTML = req.statusText;
+                    }
+                }
+            }
+
+            req.send();
+        }
+
+        window.onload = function () {
+            console.debug("loaded");
+
+            keycloak.init().success(function () {
+                if (keycloak.authenticated) {
+                    console.debug("authenticated");
+
+                    document.getElementById('login').style.display = 'none';
+                    document.getElementById('logout').onclick = function () {
+                        console.debug("logout clicked");
+
+                        keycloak.logout();
+                    }
+                } else {
+                    console.debug("not authenticated");
+
+                    document.getElementById('logout').style.display = 'none';
+                    document.getElementById('login').onclick = function () {
+                        console.debug("login clicked");
+
+                        keycloak.login();
+                    }
+                }
+            });
+
+            document.getElementById('invoke').onclick = function () {
+                request("public");
+                request("secured");
+                request("admin");
+            }
+        }
+
+    </script>
+</head>
+
+<body>
+
+<a href="#" id="login">Login</a>
+<a href="#" id="logout">Logout</a>
+
+<a href="#" id="invoke">Invoke</a>
+
+<h3>Public</h3>
+<pre id="public"></pre>
+
+<h3>Secured</h3>
+<pre id="secured"></pre>
+
+<h3>Admin</h3>
+<pre id="admin"></pre>
+
+</body>
+
+</html>
